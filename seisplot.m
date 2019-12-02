@@ -49,11 +49,12 @@ function sff = seisplot(data,varargin)
 % Signal Processing Laboratory for Communications - UNICAMP\FEEC\DMO\DSPCom
 % Tel:+55(19)3521-3857 Campinas,SP-Brazil; http://www.dspcom.fee.unicamp.br
 %
+    TAG = 'seisplot';
     warning('off','MATLAB:nargchk:deprecated')
     [opt, varargin] = seisplot_parser(varargin{:});
 
     if iscell(data), data=struct_new(data{:}); end
-    if ischar(data) && strfind(data,'ex')
+    if ischar(data) && ~isempty(strfind(data,'ex'))
         if length(data) > 2 
             numex = str2num(data(3));
         else 
@@ -63,6 +64,20 @@ function sff = seisplot(data,varargin)
         for ii=1:numex
             data.([ 'ex' num2str(ii) ]) = example_panel();
         end
+    end
+    if ischar(data)
+        if length(data) < 5
+            error([TAG ' :: Please check file name. It must end with one' ...
+                       ' of the following of sgy/segy/su/MAT']);
+        end
+        [filepath,name,ext] = fileparts(data);
+        if (strcmp(ext,'.sgy') || strcmp(ext,'.segy')) == 1
+            [d,h1,h2]=ReadSegy(data);
+            seisplot(d);
+        else
+            fprintf('su format and MAT will be launched in newer versions');
+        end
+        return;
     end
     if ~isstruct(data), 
         tmp=inputname(1);
@@ -90,7 +105,7 @@ function sff = seisplot(data,varargin)
         for ii=2:length(volume_names)
             [ty2, tx2] = size(getfield(data,volume_names{ii}));
             if (ty~=ty2)||(tx~=tx2)
-                error('seisplot :: volumes are not of the same size');
+                error([TAG ' :: volumes are not of the same size']);
             end
         end
         for ii=1:length(volume_names)
